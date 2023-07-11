@@ -1,0 +1,131 @@
+import tkinter as tk
+from tkinter import messagebox, filedialog, ttk
+import xml.etree.ElementTree as ET
+
+def gerar_xml():
+    num_min = int(num_min_entry.get())
+    num_max = int(num_max_entry.get())
+    
+    xml = '<?xml version="1.0"?>\n'
+    xml += '<LOTE>\n'
+
+    seq = 1
+    for num in range(num_min, num_max+1):
+        tipo = "I" if tipo_combobox.current() == 0 else "A"
+        livro = livro_var.get()
+        situacao = situacao_combobox.get()
+
+        if situacao == "Ativa":
+            situacao = "0"
+        elif situacao == "Anulada":
+            situacao = "1"
+        elif situacao == "Encerrada":
+            situacao = "2"
+        elif situacao == "Cancelada":
+            situacao = "3"
+        elif situacao == "Inexistente":
+            situacao = "4"
+
+        cnm = gerar_cnm(num)
+        
+        xml += '\t<REGISTRO>\n'
+        xml += '\t\t<SEQ>{}</SEQ>\n'.format(seq)
+        xml += '\t\t<TIPO>{}</TIPO>\n'.format(tipo)
+        xml += '\t\t<LIVRO>{}</LIVRO>\n'.format(livro)
+        xml += '\t\t<NUM>{}</NUM>\n'.format(num)
+        xml += '\t\t<CNM>{}</CNM>\n'.format(cnm)
+        xml += '\t\t<SITUACAO>{}</SITUACAO>\n'.format(situacao)
+        xml += '\t</REGISTRO>\n'
+
+        seq += 1
+
+    xml += '</LOTE>'
+    return xml
+
+def gerar_cnm(num):
+    numero_cns = cns_entry.get()
+    numero_livro = livro_var.get()
+    
+    digito_verificador_final = 0
+    digito_verificador = ''
+
+    resultado = ''
+    if numero_cns.strip() == '':
+        messagebox.showwarning("Aviso", "Digite o CNS do cartório.")
+        resultado = ''
+    else:
+        try:
+            resultado = '{:06d}'.format(int(numero_cns))
+            resultado += '.' + numero_livro
+            resultado += '.' + '{:07d}'.format(num)
+
+            digito_verificador = '{:06d}'.format(int(numero_cns))
+            digito_verificador += numero_livro
+            digito_verificador += '{:07d}'.format(num) + '00'
+
+            digito_verificador_final = int(digito_verificador) % 97
+            digito_verificador_final = 98 - digito_verificador_final
+
+            resultado += '-' + '{:02d}'.format(digito_verificador_final)
+        except:
+            resultado = ''
+
+    return resultado
+
+def salvar_xml():
+    xml = gerar_xml()
+    file_path = filedialog.asksaveasfilename(defaultextension=".xml")
+    if file_path:
+        with open(file_path, "w") as file:
+            file.write(xml)
+        messagebox.showinfo("Sucesso", "XML salvo com sucesso!")
+
+window = tk.Tk()
+window.title("Gerador CNM em Lote")
+window.geometry("400x300")
+
+cns_label = tk.Label(window, text="CNS do Cartório:")
+cns_entry = tk.Entry(window)
+
+livro_label = tk.Label(window, text="Livro:")
+livro_var = tk.StringVar(value="")
+livro_radiobutton1 = tk.Radiobutton(window, text="Livro 2", variable=livro_var, value="2")
+livro_radiobutton2 = tk.Radiobutton(window, text="Livro 3", variable=livro_var, value="3")
+
+num_min_label = tk.Label(window, text="Matricula Inicial:")
+num_min_entry = tk.Entry(window)
+
+num_max_label = tk.Label(window, text="Matricula Final:")
+num_max_entry = tk.Entry(window)
+
+tipo_label = tk.Label(window, text="Tipo:")
+tipo_combobox = ttk.Combobox(window, values=["Novo registro", "Alteração de um registro"])
+
+situacao_label = tk.Label(window, text="Situação:")
+situacao_combobox = ttk.Combobox(window, values=["Ativa", "Anulada", "Encerrada", "Cancelada", "Inexistente"])
+
+salvar_button = tk.Button(window, text="Salvar XML", command=salvar_xml)
+
+# Organizando os componentes na grid
+cns_label.grid(row=0, column=0, sticky="w",pady=10, padx=10)
+cns_entry.grid(row=0, column=1,columnspan=1, sticky="w",pady=10, padx=10)
+
+livro_label.grid(row=1, column=0, sticky="w",pady=10, padx=10)
+livro_radiobutton1.grid(row=1, column=1, sticky="w",pady=10, padx=10)
+livro_radiobutton2.grid(row=1, column=2, sticky="w",pady=10, padx=10)
+
+num_min_label.grid(row=3, column=0, sticky="w",pady=10, padx=10)
+num_min_entry.grid(row=3, column=1,pady=10, padx=10)
+
+num_max_label.grid(row=4, column=0, sticky="w",pady=10, padx=10)
+num_max_entry.grid(row=4, column=1,pady=10, padx=10)
+
+tipo_label.grid(row=5, column=0, sticky="w",pady=10, padx=10)
+tipo_combobox.grid(row=5, column=1, columnspan=1,pady=10, padx=10)
+
+situacao_label.grid(row=6, column=0, sticky="w",pady=10, padx=10)
+situacao_combobox.grid(row=6, column=1, columnspan=1,pady=10, padx=10)
+
+salvar_button.grid(row=7, column=2, columnspan=2,pady=10, padx=10)
+
+window.mainloop()
